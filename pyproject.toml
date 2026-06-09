@@ -1,0 +1,35 @@
+[project]
+name = "iceberg"
+version = "0.1.0"
+description = "Iceberg Web — backend monorepo (uv workspace, arquitectura por capas)"
+requires-python = ">=3.12"
+# La raíz agrega toda la cadena de capas a través de iceberg-api:
+#   api -> negocio -> repositorio -> accesodatos -> entities  (+ dto transversal)
+dependencies = ["iceberg-api"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "httpx>=0.27",
+    "ruff>=0.6",
+    "import-linter>=2.0",
+]
+
+[tool.uv.workspace]
+members = ["packages/*"]
+
+[tool.uv.sources]
+iceberg-entities = { workspace = true }
+iceberg-accesodatos = { workspace = true }
+iceberg-repositorio = { workspace = true }
+iceberg-dto = { workspace = true }
+iceberg-negocio = { workspace = true }
+iceberg-api = { workspace = true }
+
+[tool.uv]
+# Raíz "virtual": instala sus dependencias (todo el workspace) pero no se construye a sí misma.
+package = false
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

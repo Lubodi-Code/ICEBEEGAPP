@@ -1,0 +1,21 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Entornos
+.venv/
+.env
+
+# Tooling local (Claude Code)
+.claude/
+
+# Datos locales / runtime
+dev.db
+*.sqlite3
+media_local/
+
+# Lock generado por uv (opcional versionarlo; aquí lo ignoramos en el scaffold)
+# uv.lock

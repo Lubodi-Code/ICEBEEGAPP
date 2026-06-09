@@ -1,0 +1,19 @@
+[project]
+name = "iceberg-repositorio"
+version = "0.1.0"
+description = "Capa de acceso a datos — repositorios por entidad"
+requires-python = ">=3.12"
+dependencies = [
+    "iceberg-entities",
+    "sqlmodel>=0.0.22",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/iceberg_repositorio"]
+
+[tool.uv.sources]
+iceberg-entities = { workspace = true }

@@ -1,0 +1,30 @@
+[importlinter]
+root_packages =
+    iceberg_api
+    iceberg_negocio
+    iceberg_repositorio
+    iceberg_accesodatos
+    iceberg_entities
+    iceberg_dto
+
+[importlinter:contract:capas]
+name = Capas
+type = layers
+layers =
+    iceberg_api
+    iceberg_negocio
+    iceberg_repositorio
+    iceberg_accesodatos
+    iceberg_entities
+
+[importlinter:contract:api-no-datos]
+name = API no toca datos
+type = forbidden
+source_modules =
+    iceberg_api
+forbidden_modules =
+    iceberg_repositorio
+    iceberg_entities
+# La API depende transitivamente del data layer a través de negocio (inevitable y
+# correcto). Lo que prohibimos es que la API importe esas capas DIRECTAMENTE.
+allow_indirect_imports = true

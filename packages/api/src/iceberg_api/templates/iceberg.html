@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ ice.titulo }} — Iceberg Web</title>
+
+  <!-- Open Graph (el gancho): vista previa al compartir el enlace -->
+  <meta property="og:title" content="{{ og.title }}" />
+  <meta property="og:description" content="{{ og.description }}" />
+  <meta property="og:image" content="{{ og.image }}" />
+  <meta property="og:url" content="{{ og.url }}" />
+  <meta property="og:type" content="website" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="{{ og.title }}" />
+  <meta name="twitter:description" content="{{ og.description }}" />
+  <meta name="twitter:image" content="{{ og.image }}" />
+
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 720px; margin: 2rem auto; padding: 0 1rem;
+           background: #0b2540; color: #eaf2fb; }
+    h1 { color: #ffffff; }
+    .level { margin: 1.5rem 0; padding: 1rem; background: rgba(255,255,255,.06); border-radius: 10px; }
+    .level h2 { margin: 0 0 .5rem; font-size: 1.1rem; color: #8fc7ff; }
+    .entry { padding: .35rem 0; border-bottom: 1px solid rgba(255,255,255,.08); }
+    .entry:last-child { border-bottom: none; }
+    .empty { opacity: .7; font-style: italic; }
+  </style>
+</head>
+<body>
+  <h1>{{ ice.titulo }}</h1>
+
+  {% if ice.levels %}
+    {% for level in ice.levels %}
+      <section class="level">
+        <h2>Nivel {{ level.numero }}{% if level.nombre %} · {{ level.nombre }}{% endif %}</h2>
+        {% if level.entries %}
+          {% for entry in level.entries %}
+            <div class="entry">{{ entry.titulo }}</div>
+          {% endfor %}
+        {% else %}
+          <div class="empty">Sin entradas todavía.</div>
+        {% endif %}
+      </section>
+    {% endfor %}
+  {% else %}
+    <p class="empty">Este iceberg aún no tiene niveles.</p>
+  {% endif %}
+</body>
+</html>

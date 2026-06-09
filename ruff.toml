@@ -1,0 +1,16 @@
+target-version = "py312"
+line-length = 100
+
+[lint]
+# E/W: pycodestyle, F: pyflakes, I: isort, UP: pyupgrade, B: bugbear
+select = ["E", "W", "F", "I", "UP", "B"]
+
+[lint.isort]
+known-first-party = [
+    "iceberg_entities",
+    "iceberg_accesodatos",
+    "iceberg_repositorio",
+    "iceberg_dto",
+    "iceberg_negocio",
+    "iceberg_api",
+]
