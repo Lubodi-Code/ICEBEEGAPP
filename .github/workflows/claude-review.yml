@@ -1,0 +1,35 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+      types: [opened, synchronize]
+
+      jobs:
+        review:
+            runs-on: ubuntu-latest
+
+                permissions:
+                      contents: read
+                            pull-requests: write
+                                  issues: write
+
+                                      steps:
+                                            - uses: actions/checkout@v4
+                                                    with:
+                                                              fetch-depth: 0
+
+                                                                    - uses: anthropics/claude-code-action@v1
+                                                                            with:
+                                                                                      anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+                                                                                                prompt: |
+                                                                                                            Revisa este Pull Request. Enfócate en:
+                                                                                                            
+                                                                                                                        - Bugs y casos borde (edge cases)
+                                                                                                                                    - Vulnerabilidades de seguridad (inyección SQL, secretos expuestos, validación de input)
+                                                                                                                                                - Manejo de errores faltante
+                                                                                                                                                            - Violaciones de las convenciones del proyecto
+                                                                                                                                                            
+                                                                                                                                                                        Comenta en líneas específicas del diff, no solo un resumen general.
+                                                                                                                                                                                  claude_args: |
+                                                                                                                                                                                              --max-turns 10
+                                                                                                                                                                                                          --model claude-opus-4-8
