@@ -89,6 +89,42 @@ def test_video_genera_mp4(client):
     assert len(resp.content) > 10_000
 
 
+def test_limite_descripcion(client):
+    """La descripción narrable está limitada a 500 caracteres (DESCRIPCION_MAX)."""
+    resp = client.post("/icebergs", json={"titulo": "Limites"})
+    iceberg_id = resp.json()["id"]
+    resp = client.post(
+        f"/icebergs/{iceberg_id}/levels", json={"numero": 1, "nombre": None, "orden": 0}
+    )
+    level_id = resp.json()["id"]
+
+    resp = client.post(
+        f"/levels/{level_id}/entries",
+        json={"titulo": "Muy larga", "descripcion": "x" * 501, "orden": 0},
+    )
+    assert resp.status_code == 422
+
+    resp = client.post(
+        f"/levels/{level_id}/entries",
+        json={"titulo": "Justa", "descripcion": "x" * 500, "orden": 0},
+    )
+    assert resp.status_code == 201
+
+    # El endpoint de video también valida el límite.
+    resp = client.post(
+        "/video",
+        json={
+            "iceberg_title": "X",
+            "level_number": 1,
+            "level_name": None,
+            "entry_title": "Y",
+            "description": "x" * 501,
+            "media": [],
+        },
+    )
+    assert resp.status_code == 422
+
+
 def test_narracion():
     from iceberg_dto import VideoRequest
     from iceberg_negocio.video import NarrationBuilder

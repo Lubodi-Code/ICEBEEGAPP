@@ -138,7 +138,7 @@ class SceneBuilder:
     ) -> list[Any]:
         """Devuelve una lista de clips moviepy cuya duración total = duración del audio."""
         import numpy as np
-        from moviepy import AudioFileClip, CompositeVideoClip, ImageClip, VideoFileClip
+        from moviepy import AudioFileClip, CompositeVideoClip, ImageClip, VideoFileClip, vfx
 
         size = frame_size(self._settings)
         w, h = size
@@ -181,7 +181,10 @@ class SceneBuilder:
                     .with_duration(per_scene)
                     .with_position(("center", h - sub.height - int(h * 0.04)))
                 )
-            scenes.append(CompositeVideoClip(layers, size=size).with_duration(per_scene))
+            scene = CompositeVideoClip(layers, size=size).with_duration(per_scene)
+            # Transición suave entre escenas (~0.4s, acotada en escenas muy cortas).
+            fade = min(0.4, per_scene / 4)
+            scenes.append(scene.with_effects([vfx.FadeIn(fade), vfx.FadeOut(fade)]))
         return scenes
 
     def _image_scene(

@@ -27,16 +27,20 @@ class VideoRenderer:
     ) -> str:
         """Concatena intro + escenas + outro y exporta un .mp4 H.264; devuelve su ruta."""
         import numpy as np
-        from moviepy import AudioFileClip, ImageClip, concatenate_videoclips
+        from moviepy import AudioFileClip, ImageClip, concatenate_videoclips, vfx
 
         size = frame_size(self._settings)
         out_dir = Path(workdir) if workdir else Path(tempfile.mkdtemp(prefix="iceberg_video_"))
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / "iceberg.mp4"
 
-        intro = self._card(size, "ICEBERG", title, INTRO_SECONDS, ImageClip, np)
+        intro = self._card(size, "ICEBERG", title, INTRO_SECONDS, ImageClip, np).with_effects(
+            [vfx.FadeIn(0.5), vfx.FadeOut(0.4)]
+        )
         outro_text = self._settings.public_base_url.removeprefix("https://").removeprefix("http://")
-        outro = self._card(size, "Crea el tuyo", outro_text, OUTRO_SECONDS, ImageClip, np)
+        outro = self._card(
+            size, "Crea el tuyo", outro_text, OUTRO_SECONDS, ImageClip, np
+        ).with_effects([vfx.FadeIn(0.4), vfx.FadeOut(0.5)])
 
         body = concatenate_videoclips(scenes) if scenes else None
         if body is not None and audio:

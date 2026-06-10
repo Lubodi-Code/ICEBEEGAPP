@@ -27,13 +27,6 @@ onUnmounted(() => window.removeEventListener("hashchange", leerHash));
 </script>
 
 <template>
-  <header style="margin-bottom: 24px">
-    <h1 style="margin: 0; cursor: pointer" @click="volver">🧊 Iceberg</h1>
-    <p class="dim" style="margin: 4px 0 0">
-      Crea, comparte y narra icebergs de curiosidades con tus amigos.
-    </p>
-  </header>
-
   <IcebergEditor v-if="slug" :slug="slug" @volver="volver" />
   <HomeView v-else @abrir="abrir" />
 </template>
