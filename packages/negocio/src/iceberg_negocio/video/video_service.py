@@ -45,17 +45,29 @@ class VideoService:
             level_label = f"Nivel {req.level_number}"
             if req.level_name:
                 level_label += f" · {req.level_name}"
+            # Subtítulos: solo la descripción (el título va en el header de la
+            # escena y el nivel en la intro; así no se repite información).
             scenes = self.scenes.build_scenes(
                 assets,
-                text,
+                req.description,
                 audio,
                 title=req.entry_title,
-                level_label=level_label,
+            )
+            music = (
+                self.fetcher.fetch_audio(req.music_url, workdir=str(workdir))
+                if req.music_url
+                else None
             )
             mp4 = self.renderer.render(
                 scenes,
                 audio=audio,
                 title=req.iceberg_title,
+                entry_title=req.entry_title,
+                level_label=level_label,
+                levels=[(lv.numero, lv.nombre) for lv in req.levels],
+                level_number=req.level_number,
+                music=music,
+                show_url=req.show_url,
                 workdir=str(workdir),
             )
 

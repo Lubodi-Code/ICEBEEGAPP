@@ -45,6 +45,17 @@ class MediaFetcher:
             paths.append(str(dest))
         return paths
 
+    def fetch_audio(self, url: str, workdir: str) -> str | None:
+        """Descarga un audio (música) y devuelve su ruta local, o None si falla."""
+        try:
+            data = self._read(url)
+        except Exception:
+            return None
+        suffix = Path(urlparse(url).path).suffix or ".mp3"
+        dest = Path(workdir) / f"music{suffix}"
+        dest.write_bytes(data)
+        return str(dest)
+
     def _read(self, url: str) -> bytes:
         key = self._extract_key(url)
         if key is not None:

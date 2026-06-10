@@ -32,6 +32,12 @@ class Settings(BaseSettings):
     # Límite de tamaño para videos subidos (MB).
     max_video_mb: int = 25
 
+    # Límite de tamaño para música subida a un nivel (MB).
+    max_audio_mb: int = 15
+
+    # Vigencia (días) de los tokens de edición compartibles.
+    edit_token_expiry_days: int = 30
+
     # Pipeline de video: motor TTS ("edge" | "espeak" | "piper" | "silent").
     tts_engine: str = "edge"
     edge_voice: str = "es-ES-AlvaroNeural"  # voz neuronal tipo Loquendo moderno

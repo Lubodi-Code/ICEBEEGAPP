@@ -18,6 +18,7 @@ class Level(SQLModel, table=True):
     numero: int
     nombre: str | None = Field(default=None)
     orden: int = Field(default=0)
+    music_url: str | None = Field(default=None)  # música de fondo para los videos del nivel
 
     iceberg: "Iceberg" = Relationship(back_populates="levels")
     entries: list["Entry"] = Relationship(

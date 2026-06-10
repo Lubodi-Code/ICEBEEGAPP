@@ -7,15 +7,13 @@ from iceberg_dto import VideoRequest
 
 class NarrationBuilder:
     def build(self, req: VideoRequest) -> str:
-        """Genera el guion: "{titulo}. Nivel {n}: {nombre}. {entrada}. {desc}."."""
-        partes: list[str] = [req.iceberg_title.strip()]
+        """Genera el guion: "{entrada}. {desc}."
 
-        nivel = f"Nivel {req.level_number}"
-        if req.level_name and req.level_name.strip():
-            nivel += f": {req.level_name.strip()}"
-        partes.append(nivel)
-
-        partes.append(req.entry_title.strip())
+        El nombre del iceberg y el nivel ya se muestran en la intro visual
+        (mapa de niveles con zoom), así que no se repiten en la voz ni en
+        los subtítulos.
+        """
+        partes: list[str] = [req.entry_title.strip()]
         if req.description.strip():
             partes.append(req.description.strip())
 

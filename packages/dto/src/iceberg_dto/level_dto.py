@@ -17,6 +17,7 @@ class LevelUpdate(BaseModel):
     numero: int | None = Field(default=None, ge=1)
     nombre: str | None = None
     orden: int | None = None
+    music_url: str | None = None  # "" para quitar la música del nivel
 
 
 class LevelReorder(BaseModel):
@@ -30,4 +31,5 @@ class LevelRead(BaseModel):
     numero: int
     nombre: str | None
     orden: int
+    music_url: str | None = None
     entries: list[EntryRead] = []

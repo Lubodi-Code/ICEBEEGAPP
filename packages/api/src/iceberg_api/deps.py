@@ -15,12 +15,14 @@ from sqlmodel import Session
 
 from iceberg_accesodatos import get_session
 from iceberg_negocio import (
+    EditTokenService,
     EntryService,
     IcebergService,
     LevelService,
     MediaService,
     ShareService,
     VideoService,
+    get_edit_token_service,
     get_entry_service,
     get_iceberg_service,
     get_level_service,
@@ -61,9 +63,14 @@ def video_service() -> VideoService:
     return get_video_service()
 
 
+def edit_token_service(session: SessionDep) -> EditTokenService:
+    return get_edit_token_service(session)
+
+
 IcebergServiceDep = Annotated[IcebergService, Depends(iceberg_service)]
 LevelServiceDep = Annotated[LevelService, Depends(level_service)]
 EntryServiceDep = Annotated[EntryService, Depends(entry_service)]
 MediaServiceDep = Annotated[MediaService, Depends(media_service)]
 ShareServiceDep = Annotated[ShareService, Depends(share_service)]
 VideoServiceDep = Annotated[VideoService, Depends(video_service)]
+EditTokenServiceDep = Annotated[EditTokenService, Depends(edit_token_service)]

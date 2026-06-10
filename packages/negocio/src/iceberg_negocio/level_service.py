@@ -32,6 +32,8 @@ class LevelService:
             level.nombre = data.nombre
         if data.orden is not None:
             level.orden = data.orden
+        if data.music_url is not None:
+            level.music_url = data.music_url or None  # "" limpia la música
         level = self.repo.update(level)
         return LevelRead.model_validate(level)
 

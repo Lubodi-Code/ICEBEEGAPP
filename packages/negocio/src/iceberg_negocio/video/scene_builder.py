@@ -130,13 +130,16 @@ class SceneBuilder:
     def build_scenes(
         self,
         assets: list[str],
-        text: str,
+        subtitle_text: str,
         audio: str,
         *,
         title: str = "",
-        level_label: str = "",
     ) -> list[Any]:
-        """Devuelve una lista de clips moviepy cuya duración total = duración del audio."""
+        """Devuelve una lista de clips moviepy cuya duración total = duración del audio.
+
+        ``subtitle_text`` es el texto que se reparte en subtítulos (solo la
+        descripción; el título va en el header y el nivel en la intro).
+        """
         import numpy as np
         from moviepy import AudioFileClip, CompositeVideoClip, ImageClip, VideoFileClip, vfx
 
@@ -148,11 +151,10 @@ class SceneBuilder:
 
         usable = assets or [None]  # sin multimedia: una escena con fondo degradado
         per_scene = total / len(usable)
-        chunks = _split_chunks(text, len(usable))
+        chunks = _split_chunks(subtitle_text, len(usable))
 
-        # Overlays constantes (título arriba, badge de nivel debajo).
+        # Overlay constante: título de la entrada arriba.
         header = text_panel(title, w, max(int(h * 0.030), 26)) if title else None
-        badge = text_panel(level_label, w, max(int(h * 0.024), 20)) if level_label else None
 
         scenes: list[Any] = []
         for i, asset in enumerate(usable):
@@ -167,12 +169,6 @@ class SceneBuilder:
                     ImageClip(np.array(header))
                     .with_duration(per_scene)
                     .with_position(("center", 0))
-                )
-            if badge is not None:
-                layers.append(
-                    ImageClip(np.array(badge))
-                    .with_duration(per_scene)
-                    .with_position(("center", header.height if header is not None else 0))
                 )
             if chunks[i]:
                 sub = text_panel(chunks[i], w, max(int(h * 0.026), 22))

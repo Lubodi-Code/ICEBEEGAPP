@@ -17,6 +17,7 @@ from iceberg_api.routers import (
     level_router,
     media_router,
     public_router,
+    token_router,
     video_router,
 )
 from iceberg_negocio import NotFoundError, ValidationError, VideoUnavailableError
@@ -69,6 +70,7 @@ app.include_router(level_router.router)
 app.include_router(entry_router.router)
 app.include_router(media_router.router)
 app.include_router(video_router.router)
+app.include_router(token_router.router)
 app.include_router(public_router.router)
 
 # Dev: sirve la media guardada por el fallback local como estáticos.
