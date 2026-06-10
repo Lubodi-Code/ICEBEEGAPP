@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # URL pública base (slugs compartibles, OG tags, fallback de media local).
     public_base_url: str = "http://localhost:8000"
 
+    # URL base del frontend (SPA). La usa la intro del video para sacar una
+    # screenshot real del editor (modo mapa) con Playwright; si no está
+    # disponible, el render cae al mapa dibujado con Pillow.
+    frontend_base_url: str = "http://localhost:5173"
+
     # Cloudflare R2 (S3-compatible). Vacío => storage usa fallback local.
     r2_account_id: str = ""
     r2_access_key_id: str = ""

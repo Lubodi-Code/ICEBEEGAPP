@@ -19,3 +19,22 @@ class NarrationBuilder:
 
         frases = [p.rstrip(".").strip() for p in partes if p.strip()]
         return ". ".join(frases) + "."
+
+    def build_intro(self, req: VideoRequest) -> str:
+        """Locución de la intro: nombre del iceberg y nivel.
+
+        Se reproduce sobre la vista lejana mientras la cámara hace zoom al
+        nivel elegido, así la voz presenta el iceberg y el nivel sin repetirlos
+        luego en el cuerpo del video.
+        """
+        partes: list[str] = []
+        if req.iceberg_title.strip():
+            partes.append(req.iceberg_title.strip())
+
+        nivel = f"Nivel {req.level_number}"
+        if req.level_name and req.level_name.strip():
+            nivel += f": {req.level_name.strip()}"
+        partes.append(nivel)
+
+        frases = [p.rstrip(".").strip() for p in partes if p.strip()]
+        return ". ".join(frases) + "."

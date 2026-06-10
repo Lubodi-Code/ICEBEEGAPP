@@ -27,5 +27,7 @@ class VideoRequest(BaseModel):
     description: str = Field(max_length=DESCRIPCION_MAX)
     media: list[MediaRef] = []
     levels: list[LevelRef] = []  # todos los niveles, en orden; para la intro con zoom
+    slug: str | None = None  # slug del iceberg; para la screenshot real del editor
+    entry_id: str | None = None  # entrada elegida; nivel a enfocar en la intro
     music_url: str | None = None  # música de fondo (se mezcla bajo la narración)
     show_url: bool = False  # mostrar la URL pública en el outro

@@ -29,8 +29,26 @@ import ICEBERG_BG_URL from "../assets/Iceberg (1).jpg";
 const props = defineProps({
   slug: { type: String, required: true },
   token: { type: String, default: null },
+  // Modo mapa: cuando trae un entry_id, se muestra solo el iceberg (sin cromo)
+  // para que el backend tome una screenshot real como intro del video.
+  mapEntryId: { type: String, default: null },
 });
 const emit = defineEmits(["volver"]);
+
+// Modo mapa: layout limpio + marca para que Playwright sepa cuándo capturar.
+const modoMapa = computed(() => props.mapEntryId != null);
+const bgCargado = ref(false);
+const mapaListo = computed(
+  () => modoMapa.value && iceberg.value != null && bgCargado.value
+);
+
+// Nivel/entrada objetivo del modo mapa (hacia donde el video hace zoom).
+function esEntradaObjetivo(entry) {
+  return modoMapa.value && String(entry.id) === String(props.mapEntryId);
+}
+function esNivelObjetivo(nivel) {
+  return modoMapa.value && nivel.entries.some((e) => esEntradaObjetivo(e));
+}
 
 // Mismo límite que DESCRIPCION_MAX en el backend (lo que el TTS narra).
 const MAX_DESC = 500;
@@ -322,6 +340,9 @@ async function generarVideoNarrado() {
       media: entry.media.map((m) => ({ url: m.url, tipo: m.tipo })),
       // Todos los niveles, en orden: la intro muestra el mapa y hace zoom al elegido.
       levels: niveles.value.map((l) => ({ numero: l.numero, nombre: l.nombre })),
+      // Para la screenshot real del editor (intro): el backend abre #/e/{slug}?map={id}.
+      slug: iceberg.value.slug,
+      entry_id: entry.id,
       music_url: nivel.music_url || null,
       show_url: false,
     });
@@ -341,21 +362,37 @@ async function generarVideoNarrado() {
 
 onMounted(async () => {
   await cargar();
+  // En modo mapa solo importa renderizar el iceberg: sin validar token,
+  // siempre con los contenedores de nivel visibles.
+  if (modoMapa.value) {
+    showContainers.value = true;
+    return;
+  }
   await validarToken();
 });
 watch(() => props.slug, cargar);
 </script>
 
 <template>
-  <div class="ocean relative min-h-screen text-slate-100 overflow-x-hidden">
-    <!-- Atmósfera de vigilancia -->
-    <div class="grain" />
-    <div class="scanlines" />
-    <div class="light-rays fixed inset-0 z-0 pointer-events-none" />
-    <div class="bubbles fixed inset-0 z-0 pointer-events-none" />
+  <div
+    class="ocean relative text-slate-100 overflow-x-hidden"
+    :class="modoMapa ? 'h-screen overflow-hidden' : 'min-h-screen'"
+    :data-map-ready="mapaListo ? 'true' : null"
+  >
+    <!-- Atmósfera de vigilancia (se oculta en modo mapa para una foto limpia) -->
+    <template v-if="!modoMapa">
+      <div class="grain" />
+      <div class="scanlines" />
+      <div class="light-rays fixed inset-0 z-0 pointer-events-none" />
+      <div class="bubbles fixed inset-0 z-0 pointer-events-none" />
+    </template>
 
-    <div class="relative z-10 flex flex-col min-h-screen">
+    <div
+      class="relative z-10 flex flex-col"
+      :class="modoMapa ? 'h-screen' : 'min-h-screen'"
+    >
       <!-- Header de expediente -->
+      <template v-if="!modoMapa">
       <header
         class="p-4 md:p-6 flex justify-between items-center gap-3 sticky top-0 z-20 backdrop-blur-sm border-b border-[#d8b15a]/15"
         style="background: linear-gradient(180deg, rgba(4,8,10,0.92), rgba(4,8,10,0.55) 75%, transparent);"
@@ -471,6 +508,7 @@ watch(() => props.slug, cargar);
         ⚠ {{ error }} —
         <a href="#" class="underline" @click.prevent="emit('volver')">volver</a>
       </p>
+      </template>
 
       <!-- Zona del iceberg: la imagen está anclada a los niveles, no a la ventana.
            La punta queda arriba (Nivel 1) y el cuerpo desciende junto con las capas. -->
@@ -481,6 +519,7 @@ watch(() => props.slug, cargar);
             alt=""
             class="w-full h-full object-cover object-top"
             style="filter: saturate(0.65) brightness(0.7) hue-rotate(25deg);"
+            @load="bgCargado = true"
           />
           <!-- Degradado que se hunde con los niveles: superficie → abismo -->
           <div
@@ -504,10 +543,17 @@ watch(() => props.slug, cargar);
           />
         </div>
 
-        <!-- Capas del iceberg -->
-        <main class="relative z-10 flex flex-col w-full max-w-5xl mx-auto px-4 pb-12 gap-5">
+        <!-- Capas del iceberg. En modo mapa ocupa toda la altura para que todos
+             los niveles quepan en el viewport (la screenshot es sin scroll). -->
+        <main
+          class="relative z-10 flex flex-col w-full max-w-5xl mx-auto px-4 gap-5"
+          :class="modoMapa ? 'h-full pb-6' : 'pb-12'"
+        >
         <!-- La punta del iceberg asoma aquí; el Nivel 1 empieza en la línea de flotación -->
-        <div class="h-[34vh] md:h-[40vh] shrink-0" aria-hidden="true" />
+        <div
+          aria-hidden="true"
+          :class="modoMapa ? 'h-[14vh] shrink-0' : 'h-[34vh] md:h-[40vh] shrink-0'"
+        />
 
         <!-- Línea de flotación / frontera de lo conocido -->
         <div
@@ -523,11 +569,14 @@ watch(() => props.slug, cargar);
           v-for="(nivel, i) in niveles"
           :key="nivel.id"
           :style="showContainers ? bandStyle(i, niveles.length) : null"
+          :data-target-band="esNivelObjetivo(nivel) ? 'true' : null"
           :class="[
-            'relative min-h-40 transition-all duration-500 group flex',
+            'relative transition-all duration-500 group flex',
+            modoMapa ? 'flex-1 min-h-0 overflow-hidden' : 'min-h-40',
             showContainers
               ? 'rounded-lg border border-[#d8b15a]/15 ring-1 ring-inset ring-white/5 overflow-hidden backdrop-blur-md shadow-xl shadow-black/40 hover:border-[#56d68a]/30'
               : 'py-2',
+            esNivelObjetivo(nivel) ? 'ring-2 ring-[#d8b15a]/70 border-[#d8b15a]/60' : '',
           ]"
         >
           <!-- Regla de profundidad lateral -->
@@ -574,6 +623,8 @@ watch(() => props.slug, cargar);
                 v-for="entry in nivel.entries"
                 :key="entry.id"
                 class="evidence relative px-5 py-3 rounded"
+                :data-target="esEntradaObjetivo(entry) ? 'true' : null"
+                :class="esEntradaObjetivo(entry) ? 'ring-2 ring-[#d8b15a]' : ''"
                 @click="abrirEntrada(entry, nivel)"
               >
                 <span class="mono font-semibold text-slate-100 drop-shadow-md text-sm">{{
@@ -593,7 +644,10 @@ watch(() => props.slug, cargar);
         </main>
       </div>
 
-      <footer class="py-6 text-center backdrop-blur-sm bg-black/60 border-t border-[#d8b15a]/10">
+      <footer
+        v-if="!modoMapa"
+        class="py-6 text-center backdrop-blur-sm bg-black/60 border-t border-[#d8b15a]/10"
+      >
         <p class="mono text-[10px] uppercase tracking-[0.3em] text-slate-600">
           Iceberg Web · Este documento se autodestruirá… algún día
         </p>
@@ -602,7 +656,7 @@ watch(() => props.slug, cargar);
 
     <!-- ============ MODAL DE ENTRADA (documento clasificado) ============ -->
     <div
-      v-if="seleccion"
+      v-if="seleccion && !modoMapa"
       class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-lg"
       @click.self="seleccion = null"
     >
@@ -934,7 +988,7 @@ watch(() => props.slug, cargar);
 
     <!-- Toast -->
     <div
-      v-if="toast"
+      v-if="toast && !modoMapa"
       class="mono fixed bottom-6 left-1/2 -translate-x-1/2 bg-black/90 border border-[#56d68a]/40 rounded px-5 py-3 text-sm shadow-2xl z-[60] text-[#cdeedd]"
     >
       {{ toast }}

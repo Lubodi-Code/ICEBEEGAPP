@@ -38,8 +38,12 @@ class VideoService:
         """
         workdir = Path(tempfile.mkdtemp(prefix="iceberg_video_"))
         try:
-            text = self.narration.build(req)
-            audio = self.tts.synth(text, workdir=str(workdir))
+            # Cuerpo: la voz narra la entrada y su descripción.
+            body_text = self.narration.build(req)
+            body_audio = self.tts.synth(body_text, workdir=str(workdir / "body"))
+            # Intro: la voz presenta el iceberg y el nivel durante el zoom.
+            intro_text = self.narration.build_intro(req)
+            intro_audio = self.tts.synth(intro_text, workdir=str(workdir / "intro"))
             assets = self.fetcher.fetch(req.media, workdir=str(workdir))
 
             level_label = f"Nivel {req.level_number}"
@@ -50,7 +54,7 @@ class VideoService:
             scenes = self.scenes.build_scenes(
                 assets,
                 req.description,
-                audio,
+                body_audio,
                 title=req.entry_title,
             )
             music = (
@@ -60,12 +64,15 @@ class VideoService:
             )
             mp4 = self.renderer.render(
                 scenes,
-                audio=audio,
+                audio=body_audio,
+                intro_audio=intro_audio,
                 title=req.iceberg_title,
                 entry_title=req.entry_title,
                 level_label=level_label,
                 levels=[(lv.numero, lv.nombre) for lv in req.levels],
                 level_number=req.level_number,
+                slug=req.slug,
+                entry_id=req.entry_id,
                 music=music,
                 show_url=req.show_url,
                 workdir=str(workdir),

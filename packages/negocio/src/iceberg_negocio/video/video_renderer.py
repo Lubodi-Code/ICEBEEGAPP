@@ -39,22 +39,63 @@ class VideoRenderer:
             wav.setframerate(SAMPLE_RATE)
             wav.writeframes(b"\x00\x00" * n_frames)
 
-    def _build_full_audio(self, body_audio: str, out_path: Path) -> str:
-        """Concatena silencio + audio + silencio usando moviepy."""
+    def _build_full_audio(
+        self,
+        body_audio: str,
+        out_path: Path,
+        *,
+        intro_audio: str | None = None,
+        intro_dur: float = INTRO_SECONDS,
+    ) -> str:
+        """Concatena intro + cuerpo + silencio final usando moviepy.
+
+        El tramo de intro dura ``intro_dur`` exactamente (igual que el clip de
+        intro del video): si hay ``intro_audio`` (voz de presentación) se usa esa
+        voz y se rellena con silencio hasta completar ``intro_dur``; si no, es
+        todo silencio.
+        """
         from moviepy import AudioFileClip, concatenate_audioclips
 
-        intro_silence = out_path.parent / "silence_intro.wav"
-        outro_silence = out_path.parent / "silence_outro.wav"
-
-        self._make_silence_audio(INTRO_SECONDS, intro_silence)
+        out_dir = out_path.parent
+        outro_silence = out_dir / "silence_outro.wav"
         self._make_silence_audio(OUTRO_SECONDS, outro_silence)
 
-        # Usa moviepy para concatenar (maneja MP3 y WAV automáticamente).
-        with AudioFileClip(str(intro_silence)) as intro_aud:
-            with AudioFileClip(body_audio) as body_aud:
-                with AudioFileClip(str(outro_silence)) as outro_aud:
-                    full = concatenate_audioclips([intro_aud, body_aud, outro_aud])
-                    full.write_audiofile(str(out_path), logger=None)
+        opened: list[Any] = []
+        parts: list[Any] = []
+
+        if intro_audio:
+            intro_aud = AudioFileClip(intro_audio)
+            opened.append(intro_aud)
+            parts.append(intro_aud)
+            pad = intro_dur - float(intro_aud.duration)
+            if pad > 0.02:
+                pad_path = out_dir / "silence_intro_pad.wav"
+                self._make_silence_audio(pad, pad_path)
+                pad_aud = AudioFileClip(str(pad_path))
+                opened.append(pad_aud)
+                parts.append(pad_aud)
+        else:
+            intro_silence = out_dir / "silence_intro.wav"
+            self._make_silence_audio(intro_dur, intro_silence)
+            intro_aud = AudioFileClip(str(intro_silence))
+            opened.append(intro_aud)
+            parts.append(intro_aud)
+
+        body_aud = AudioFileClip(body_audio)
+        opened.append(body_aud)
+        parts.append(body_aud)
+
+        outro_aud = AudioFileClip(str(outro_silence))
+        opened.append(outro_aud)
+        parts.append(outro_aud)
+
+        try:
+            full = concatenate_audioclips(parts)
+            full.write_audiofile(str(out_path), logger=None)
+            full.close()
+        finally:
+            for clip in opened:
+                clip.close()
 
         return str(out_path)
 
@@ -63,11 +104,14 @@ class VideoRenderer:
         scenes: list[Any],
         *,
         audio: str | None = None,
+        intro_audio: str | None = None,
         title: str = "",
         entry_title: str = "",
         level_label: str = "",
         levels: list[tuple[int, str | None]] | None = None,
         level_number: int = 0,
+        slug: str | None = None,
+        entry_id: str | None = None,
         music: str | None = None,
         show_url: bool = False,
         workdir: str | None = None,
@@ -81,13 +125,34 @@ class VideoRenderer:
         out_dir.mkdir(parents=True, exist_ok=True)
         out_path = out_dir / "iceberg.mp4"
 
+        # La intro dura lo que la locución de presentación (voz del iceberg/nivel)
+        # más una pequeña cola; nunca menos que el mínimo cinematográfico. Esta
+        # misma duración se usa para el clip de intro y para el tramo de audio,
+        # de modo que el cuerpo siga perfectamente alineado con sus escenas.
+        intro_dur = INTRO_SECONDS
+        if intro_audio:
+            with AudioFileClip(intro_audio) as ia:
+                intro_dur = max(INTRO_SECONDS, float(ia.duration) + 0.5)
+
         # Intro: mapa de niveles con zoom al elegido; sin niveles, tarjeta clásica.
         if levels:
             intro = self._levels_intro(
-                size, title, entry_title, levels, level_number, ImageClip, np
+                size,
+                title,
+                entry_title,
+                levels,
+                level_number,
+                ImageClip,
+                np,
+                dur=intro_dur,
+                slug=slug,
+                entry_id=entry_id,
+                out_dir=out_dir,
             )
         else:
-            intro = self._intro(size, title, entry_title, level_label, ImageClip, np)
+            intro = self._intro(
+                size, title, entry_title, level_label, ImageClip, np, dur=intro_dur
+            )
 
         # Outro: nunca muestra URLs de localhost; opcionalmente ninguna.
         outro_text = ""
@@ -106,7 +171,9 @@ class VideoRenderer:
         final.mask = None
 
         # Audio: narración SIEMPRE; la música solo se mezcla si se puede decodificar.
-        audio_path = self._compose_audio(audio, music, final.duration, out_dir)
+        audio_path = self._compose_audio(
+            audio, music, final.duration, out_dir, intro_audio=intro_audio, intro_dur=intro_dur
+        )
         if audio_path is not None:
             final = final.with_audio(AudioFileClip(audio_path))
 
@@ -132,26 +199,41 @@ class VideoRenderer:
         target_number: int,
         image_clip,
         np,
+        *,
+        dur: float = INTRO_SECONDS,
+        slug: str | None = None,
+        entry_id: str | None = None,
+        out_dir: Path | None = None,
     ):
-        """Vista lejana de todos los niveles y zoom suave hacia el nivel elegido."""
+        """Vista lejana de todos los niveles y zoom suave hacia el nivel elegido.
+
+        Si es posible, usa una screenshot real del editor (modo mapa) vía
+        Playwright; si no, cae al mapa dibujado con Pillow. En ambos casos la
+        imagen tiene la proporción del cuadro, así que ``res`` se deduce de ella.
+        """
         from moviepy import CompositeVideoClip, vfx
 
         w, h = size
-        dur = INTRO_SECONDS
-        res = MAP_SUPERSAMPLE
 
-        map_img, (xc, yc), band_h_hi = self._draw_levels_map(
-            size, res, iceberg_title, entry_title, levels, target_number
+        map_img, (xc, yc), band_h_hi = self._build_map_image(
+            size, iceberg_title, entry_title, levels, target_number, slug, entry_id, out_dir
         )
+        # La imagen es proporcional al cuadro; res = cuánto la sobremuestrea.
+        res = map_img.width / float(w)
 
         # Zoom final: que la banda elegida ocupe ~media pantalla (sin pasar la
-        # resolución a la que se dibujó el mapa).
+        # resolución a la que se dibujó/capturó el mapa).
         band_h_screen = band_h_hi / res
         s_final = min(2.1, max(1.5, (h * 0.42) / max(band_h_screen, 1.0)))
 
+        # El zoom se acompasa a la intro (que dura lo que la voz de presentación):
+        # breve vista lejana, acercamiento mientras se nombra el nivel, y cola.
+        hold = min(MAP_HOLD, dur * 0.32)
+        zoom_time = min(MAP_ZOOM_TIME, max(dur - hold - 0.4, 0.6))
+
         def prog(t: float) -> float:
             """Progreso del zoom con suavizado (espera, acelera, frena)."""
-            u = (t - MAP_HOLD) / MAP_ZOOM_TIME
+            u = (t - hold) / zoom_time
             u = min(max(u, 0.0), 1.0)
             return u * u * (3.0 - 2.0 * u)
 
@@ -180,6 +262,50 @@ class VideoRenderer:
         )
         intro = CompositeVideoClip([clip], size=size).with_duration(dur)
         return intro.with_effects([vfx.FadeIn(0.45), vfx.FadeOut(0.5)])
+
+    def _build_map_image(
+        self,
+        size,
+        iceberg_title: str,
+        entry_title: str,
+        levels: list[tuple[int, str | None]],
+        target_number: int,
+        slug: str | None,
+        entry_id: str | None,
+        out_dir: Path | None,
+    ):
+        """Imagen del mapa hi-res: screenshot real del editor o, si falla, dibujada.
+
+        Devuelve ``(imagen_pillow, (centro_x, centro_y), alto_banda)`` en píxeles
+        de la imagen, con la misma semántica en ambos caminos.
+        """
+        from PIL import Image
+
+        w, h = size
+
+        # Camino preferido: foto real de la SPA (solo si tenemos a dónde apuntar).
+        if slug and entry_id and out_dir is not None:
+            try:
+                from iceberg_negocio.video.map_screenshotter import capture_map
+
+                png, xc, yc, band_h = capture_map(
+                    slug,
+                    entry_id,
+                    self._settings.frontend_base_url,
+                    out_dir / "map_shot.png",
+                    width=w,
+                    height=h,
+                    scale=int(round(MAP_SUPERSAMPLE)) or 2,
+                )
+                img = Image.open(png).convert("RGB")
+                return img, (xc, yc), band_h
+            except Exception:
+                # Playwright ausente, frontend caído o timeout: usamos el dibujo.
+                pass
+
+        return self._draw_levels_map(
+            size, MAP_SUPERSAMPLE, iceberg_title, entry_title, levels, target_number
+        )
 
     def _draw_levels_map(
         self,
@@ -297,12 +423,21 @@ class VideoRenderer:
         base.alpha_composite(overlay)
         return base.convert("RGB"), target_center, band_h
 
-    def _intro(self, size, iceberg_title: str, entry_title: str, level_label: str, image_clip, np):
+    def _intro(
+        self,
+        size,
+        iceberg_title: str,
+        entry_title: str,
+        level_label: str,
+        image_clip,
+        np,
+        *,
+        dur: float = INTRO_SECONDS,
+    ):
         """Intro cinematográfica: fondo con foco y viñeta en zoom lento + textos escalonados."""
         from moviepy import CompositeVideoClip, vfx
 
         w, h = size
-        dur = INTRO_SECONDS
 
         # Fondo sobredimensionado para que el zoom nunca deje bordes.
         bg_img = self._intro_background((int(w * (1 + INTRO_ZOOM)), int(h * (1 + INTRO_ZOOM))), np)
@@ -479,7 +614,14 @@ class VideoRenderer:
     # ------------------------------------------------------------------ audio
 
     def _compose_audio(
-        self, narration: str | None, music: str | None, duration: float, out_dir: Path
+        self,
+        narration: str | None,
+        music: str | None,
+        duration: float,
+        out_dir: Path,
+        *,
+        intro_audio: str | None = None,
+        intro_dur: float = INTRO_SECONDS,
     ) -> str | None:
         """Devuelve la ruta de un WAV final con narración + música mezcladas.
 
@@ -489,7 +631,12 @@ class VideoRenderer:
         """
         narration_path: str | None = None
         if narration:
-            narration_path = self._build_full_audio(narration, out_dir / "full_audio.wav")
+            narration_path = self._build_full_audio(
+                narration,
+                out_dir / "full_audio.wav",
+                intro_audio=intro_audio,
+                intro_dur=intro_dur,
+            )
 
         if not music:
             return narration_path
