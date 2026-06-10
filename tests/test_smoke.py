@@ -137,7 +137,7 @@ def test_narracion():
         description="Corrientes salinas.",
         media=[],
     )
+    # El iceberg y el nivel se muestran en la intro visual (mapa con zoom),
+    # así que la voz solo narra la entrada y su descripción.
     guion = NarrationBuilder().build(req)
-    assert guion == (
-        "Curiosidades del océano. Nivel 2: Profundo. El mar tiene ríos. Corrientes salinas."
-    )
+    assert guion == "El mar tiene ríos. Corrientes salinas."

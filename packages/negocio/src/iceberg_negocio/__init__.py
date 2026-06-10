@@ -1,5 +1,6 @@
 """Capa de negocio: servicios, mapeo entity<->dto, factory DI, storage y video."""
 
+from iceberg_negocio.edit_token_service import EditTokenService
 from iceberg_negocio.entry_service import EntryService
 from iceberg_negocio.errors import (
     DomainError,
@@ -8,6 +9,7 @@ from iceberg_negocio.errors import (
     VideoUnavailableError,
 )
 from iceberg_negocio.factory import (
+    get_edit_token_service,
     get_entry_service,
     get_iceberg_service,
     get_level_service,
@@ -32,6 +34,8 @@ __all__ = [
     "MediaService",
     "ShareService",
     "VideoService",
+    "EditTokenService",
+    "get_edit_token_service",
     "get_iceberg_service",
     "get_level_service",
     "get_entry_service",

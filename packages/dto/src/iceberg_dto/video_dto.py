@@ -12,6 +12,13 @@ class MediaRef(BaseModel):
     tipo: str  # "image" | "video"
 
 
+class LevelRef(BaseModel):
+    """Nivel del iceberg para la intro con mapa de niveles (vista lejana + zoom)."""
+
+    numero: int
+    nombre: str | None = None
+
+
 class VideoRequest(BaseModel):
     iceberg_title: str = Field(max_length=120)
     level_number: int
@@ -19,3 +26,8 @@ class VideoRequest(BaseModel):
     entry_title: str = Field(max_length=160)
     description: str = Field(max_length=DESCRIPCION_MAX)
     media: list[MediaRef] = []
+    levels: list[LevelRef] = []  # todos los niveles, en orden; para la intro con zoom
+    slug: str | None = None  # slug del iceberg; para la screenshot real del editor
+    entry_id: str | None = None  # entrada elegida; nivel a enfocar en la intro
+    music_url: str | None = None  # música de fondo (se mezcla bajo la narración)
+    show_url: bool = False  # mostrar la URL pública en el outro
