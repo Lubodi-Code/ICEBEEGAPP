@@ -43,7 +43,7 @@ class VideoRenderer:
             with AudioFileClip(body_audio) as body_aud:
                 with AudioFileClip(str(outro_silence)) as outro_aud:
                     full = concatenate_audioclips([intro_aud, body_aud, outro_aud])
-                    full.write_audiofile(str(out_path), verbose=False, logger=None)
+                    full.write_audiofile(str(out_path), logger=None)
 
         return str(out_path)
 
