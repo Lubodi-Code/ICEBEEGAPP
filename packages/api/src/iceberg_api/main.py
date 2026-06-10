@@ -19,7 +19,7 @@ from iceberg_api.routers import (
     public_router,
     video_router,
 )
-from iceberg_negocio import NotFoundError, ValidationError
+from iceberg_negocio import NotFoundError, ValidationError, VideoUnavailableError
 
 MEDIA_LOCAL_DIR = Path("media_local")
 
@@ -52,6 +52,11 @@ async def _not_found_handler(request: Request, exc: NotFoundError) -> JSONRespon
 @app.exception_handler(ValidationError)
 async def _validation_handler(request: Request, exc: ValidationError) -> JSONResponse:
     return JSONResponse(status_code=422, content={"detail": str(exc)})
+
+
+@app.exception_handler(VideoUnavailableError)
+async def _video_unavailable_handler(request: Request, exc: VideoUnavailableError) -> JSONResponse:
+    return JSONResponse(status_code=503, content={"detail": str(exc)})
 
 
 @app.get("/health", tags=["meta"])

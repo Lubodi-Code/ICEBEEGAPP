@@ -17,6 +17,9 @@ _TMP_DIR = tempfile.mkdtemp(prefix="iceberg_test_")
 _DB_PATH = Path(_TMP_DIR, "test.db").as_posix()
 os.environ["DATABASE_URL"] = f"sqlite:///{_DB_PATH}"
 os.environ["PUBLIC_BASE_URL"] = "http://testserver"
+# Pipeline de video reproducible sin TTS instalado y con render rápido.
+os.environ["TTS_ENGINE"] = "silent"
+os.environ["VIDEO_FPS"] = "10"
 
 
 @pytest.fixture

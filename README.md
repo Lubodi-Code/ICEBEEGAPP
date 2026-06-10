@@ -20,7 +20,7 @@ Cada capa vive en `packages/<capa>/` como un paquete Python independiente con su
 | `packages/accesodatos` | `iceberg_accesodatos` | Settings, engine y sesión. Acceso a datos. |
 | `packages/repositorio` | `iceberg_repositorio` | Repositorios por entidad. **Única** capa que toca la DB. |
 | `packages/dto`         | `iceberg_dto`         | Schemas Pydantic (request/response). **Transversal.** |
-| `packages/negocio`     | `iceberg_negocio`     | Servicios, mapeo entity↔dto, factory DI, storage R2, pipeline de video (stub). |
+| `packages/negocio`     | `iceberg_negocio`     | Servicios, mapeo entity↔dto, factory DI, storage R2, pipeline de video. |
 | `packages/api`         | `iceberg_api`         | FastAPI: routers, dependencias, páginas públicas. |
 | `cliente/`             | —                     | Frontend (Vue, aparte). Habla a `api` por HTTP. |
 
@@ -76,7 +76,7 @@ PK UUID (str), timestamps en UTC. Definidos en `packages/entities/`.
 | POST | `/levels/{level_id}/entries` | Crear una entrada |
 | PATCH / DELETE | `/entries/{id}` | Editar / eliminar entrada |
 | POST | `/entries/{entry_id}/media` | Subir foto/video (multipart; imágenes → WebP) |
-| POST | `/video` | Generar video (efímero) — **501 por ahora** |
+| POST | `/video` | Genera y descarga el video narrado (.mp4 efímero) |
 | GET | `/i/{slug}` | Página pública con OG tags (Jinja2) |
 | GET | `/health` | Healthcheck |
 
@@ -98,6 +98,10 @@ Copia `.env.example` a `.env` y ajusta lo que necesites:
 | `PUBLIC_BASE_URL` | `http://localhost:8000` | Base de slugs compartibles, OG tags y media local. |
 | `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` / `R2_PUBLIC_URL` | vacío | Cloudflare R2. Si están vacías, usa el fallback local. |
 | `MAX_VIDEO_MB` | `25` | Tamaño máximo para videos subidos. |
+| `TTS_ENGINE` | `espeak` | Motor de voz: `espeak` (robótico clásico), `piper` (neuronal, requiere `PIPER_VOICE`) o `silent` (sin TTS instalado; dev/tests). |
+| `ESPEAK_VOICE` / `ESPEAK_SPEED` | `es` / `165` | Voz y velocidad de eSpeak-NG. |
+| `PIPER_VOICE` | vacío | Ruta al modelo `.onnx` de Piper (solo con `TTS_ENGINE=piper`). |
+| `VIDEO_ASPECT` / `VIDEO_FPS` | `9:16` / `24` | Aspecto (vertical u horizontal `16:9`) y fps del video exportado. |
 
 ---
 
@@ -159,9 +163,12 @@ docker run -p 7860:7860 --env-file .env iceberg-api
 - [x] **Fase 1 — MVP:** CRUD de iceberg/level/entry + vista pública.
 - [x] **Fase 2 — Compartir:** enlace público con OG tags (el gancho).
 - [x] **Fase 3 — Multimedia:** subida con compresión WebP (Pillow) → R2 / fallback local.
-- [ ] **Fase 4 — Video:** pipeline TTS + FFmpeg (las clases existen como *stubs* en
-      `packages/negocio/src/iceberg_negocio/video/`; el endpoint `POST /video` devuelve 501).
-- [ ] **Fase 5 — Pulido:** cuentas, plantillas, música de fondo, etiquetas por nivel.
+- [x] **Fase 4 — Video:** pipeline TTS (eSpeak-NG / Piper / silent) + moviepy/FFmpeg en
+      `packages/negocio/src/iceberg_negocio/video/`; `POST /video` devuelve el `.mp4`
+      (escenas Ken Burns, overlays de título/nivel/subtítulos, intro/outro, 9:16 o 16:9).
+- [x] **Fase 5 — Frontend:** SPA Vue 3 + Vite en `cliente/` (crear/editar iceberg, niveles
+      colapsables, subir media, copiar enlace y generar video).
+- [ ] **Pulido futuro:** cuentas, plantillas, música de fondo, etiquetas por nivel.
 
 > Restricción de diseño: **costo de operación cero** (todo dentro de planes gratuitos:
 > Cloudflare Pages/R2, Hugging Face Spaces, Neon, GitHub Actions).

@@ -13,3 +13,7 @@ class NotFoundError(DomainError):
 
 class ValidationError(DomainError):
     """Los datos de entrada no son válidos según las reglas de negocio."""
+
+
+class VideoUnavailableError(DomainError):
+    """El pipeline de video no puede correr en este entorno (falta una herramienta)."""

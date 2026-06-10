@@ -1,4 +1,4 @@
-"""Pipeline de generación de video (efímero). Todas las piezas son STUBS por ahora."""
+"""Pipeline de generación de video (efímero): TTS + moviepy/FFmpeg."""
 
 from iceberg_negocio.video.media_fetcher import MediaFetcher
 from iceberg_negocio.video.narration_builder import NarrationBuilder

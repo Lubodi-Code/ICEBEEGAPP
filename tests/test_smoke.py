@@ -69,17 +69,39 @@ def test_flujo_completo_y_publico(client):
     assert "Curiosidades del océano" in resp.text
 
 
-def test_video_no_implementado(client):
+def test_video_genera_mp4(client):
+    """Pipeline completo con TTS 'silent' (conftest): debe devolver un .mp4 real."""
     resp = client.post(
         "/video",
         json={
-            "iceberg_title": "X",
+            "iceberg_title": "Curiosidades",
             "level_number": 1,
-            "level_name": None,
-            "entry_title": "Y",
-            "description": "Z",
+            "level_name": "La superficie",
+            "entry_title": "El mar tiene ríos",
+            "description": "Corrientes salinas bajo el océano.",
             "media": [],
         },
     )
-    assert resp.status_code == 501
-    assert resp.json()["detail"] == "Pipeline de video aún no implementado"
+    assert resp.status_code == 200, resp.text
+    assert resp.headers["content-type"] == "video/mp4"
+    # Firma de contenedor MP4: el box 'ftyp' aparece en los primeros bytes.
+    assert b"ftyp" in resp.content[:64]
+    assert len(resp.content) > 10_000
+
+
+def test_narracion():
+    from iceberg_dto import VideoRequest
+    from iceberg_negocio.video import NarrationBuilder
+
+    req = VideoRequest(
+        iceberg_title="Curiosidades del océano",
+        level_number=2,
+        level_name="Profundo",
+        entry_title="El mar tiene ríos",
+        description="Corrientes salinas.",
+        media=[],
+    )
+    guion = NarrationBuilder().build(req)
+    assert guion == (
+        "Curiosidades del océano. Nivel 2: Profundo. El mar tiene ríos. Corrientes salinas."
+    )
