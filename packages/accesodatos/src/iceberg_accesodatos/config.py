@@ -32,6 +32,16 @@ class Settings(BaseSettings):
     # Límite de tamaño para videos subidos (MB).
     max_video_mb: int = 25
 
+    # Pipeline de video: motor TTS ("espeak" | "piper" | "silent").
+    tts_engine: str = "espeak"
+    espeak_voice: str = "es"
+    espeak_speed: int = 165
+    piper_voice: str = ""  # ruta al modelo de voz .onnx de Piper
+
+    # Render: relación de aspecto ("9:16" | "16:9") y fps de salida.
+    video_aspect: str = "9:16"
+    video_fps: int = 24
+
     @property
     def normalized_database_url(self) -> str:
         """Usa el driver psycopg3 para URLs Postgres planas (Neon entrega ``postgresql://``)."""

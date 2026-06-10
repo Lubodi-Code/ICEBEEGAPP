@@ -1,9 +1,8 @@
-# cliente/ — Frontend (placeholder)
+# cliente/ — Frontend (Vue 3 + Vite)
 
-Esta carpeta es un **placeholder**. El frontend (Vue 3 + Vite, o Alpine.js) se desarrolla
-aparte y **no comparte código** con el backend: se comunica con la API exclusivamente por
-HTTP (JSON) y consume las páginas públicas (`GET /i/{slug}`) que el backend renderiza con
-Jinja2 + OG tags.
+SPA para crear y editar icebergs. **No comparte código** con el backend: se comunica con
+la API exclusivamente por HTTP (JSON) y delega la vista pública en `GET /i/{slug}`
+(renderizada por el backend con Jinja2 + OG tags).
 
 Capa **cliente** dentro de la arquitectura por capas:
 
@@ -13,8 +12,28 @@ cliente  ──HTTP──>  api  ->  negocio  ->  repositorio  ->  accesodatos  
                                      └─ dto (contratos transversales)
 ```
 
-## Cuando se implemente
+## Funcionalidad
 
-- `npm create vite@latest` (plantilla Vue) dentro de esta carpeta.
-- Apuntar las llamadas a `http://localhost:8000` (o `PUBLIC_BASE_URL`).
-- Deploy sugerido: Cloudflare Pages (gratis).
+- Crear icebergs y abrir existentes por slug/enlace (recientes en `localStorage`).
+- Editar título; agregar/renombrar/reordenar/eliminar niveles (colapsables).
+- Agregar/editar/eliminar entradas; subir fotos (→ WebP) y videos.
+- **Copiar enlace** público y abrir la página con OG tags.
+- **Generar video**: llama `POST /video` y descarga el `.mp4` narrado.
+
+## Cómo correr
+
+```bash
+cd cliente
+npm install
+cp .env.example .env   # ajusta VITE_API_URL si hace falta
+npm run dev            # http://localhost:5173 (la API debe estar en VITE_API_URL)
+```
+
+## Build / deploy
+
+```bash
+npm run build          # genera dist/
+```
+
+Deploy sugerido: **Cloudflare Pages** (gratis) con `VITE_API_URL` apuntando al
+Hugging Face Space del backend.
