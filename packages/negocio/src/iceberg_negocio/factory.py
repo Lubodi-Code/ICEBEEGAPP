@@ -10,6 +10,14 @@ from iceberg_negocio.level_service import LevelService
 from iceberg_negocio.media_service import MediaService
 from iceberg_negocio.share_service import ShareService
 from iceberg_negocio.storage import R2Storage
+from iceberg_negocio.video import (
+    MediaFetcher,
+    NarrationBuilder,
+    SceneBuilder,
+    TTSEngine,
+    VideoRenderer,
+    VideoService,
+)
 from iceberg_repositorio import (
     EntryRepository,
     IcebergRepository,
@@ -36,3 +44,13 @@ def get_media_service(session: Session) -> MediaService:
 
 def get_share_service() -> ShareService:
     return ShareService()
+
+
+def get_video_service() -> VideoService:
+    return VideoService(
+        narration=NarrationBuilder(),
+        tts=TTSEngine(),
+        fetcher=MediaFetcher(),
+        scenes=SceneBuilder(),
+        renderer=VideoRenderer(),
+    )

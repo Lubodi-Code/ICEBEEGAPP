@@ -1,6 +1,10 @@
-"""VideoService — orquesta el pipeline de generación de video (STUB)."""
+"""VideoService — orquesta el pipeline de generación de video (efímero)."""
 
 from __future__ import annotations
+
+import shutil
+import tempfile
+from pathlib import Path
 
 from iceberg_dto import VideoRequest
 from iceberg_negocio.video.media_fetcher import MediaFetcher
@@ -26,9 +30,38 @@ class VideoService:
         self.renderer = renderer
 
     def generate(self, req: VideoRequest) -> str:
-        """Genera el .mp4 y devuelve su ruta en /tmp.
+        """Genera el .mp4 y devuelve su ruta temporal.
 
-        Flujo previsto: narración -> TTS -> fetch media -> escenas -> render.
-        TODO: implementar la orquestación completa del pipeline.
+        Flujo: narración -> TTS -> fetch media -> escenas -> render.
+        Los archivos intermedios se borran; el .mp4 queda para que la capa API
+        lo sirva y lo elimine al terminar la respuesta.
         """
-        raise NotImplementedError("VideoService.generate aún no implementado")
+        workdir = Path(tempfile.mkdtemp(prefix="iceberg_video_"))
+        try:
+            text = self.narration.build(req)
+            audio = self.tts.synth(text, workdir=str(workdir))
+            assets = self.fetcher.fetch(req.media, workdir=str(workdir))
+
+            level_label = f"Nivel {req.level_number}"
+            if req.level_name:
+                level_label += f" · {req.level_name}"
+            scenes = self.scenes.build_scenes(
+                assets,
+                text,
+                audio,
+                title=req.entry_title,
+                level_label=level_label,
+            )
+            mp4 = self.renderer.render(
+                scenes,
+                audio=audio,
+                title=req.iceberg_title,
+                workdir=str(workdir),
+            )
+
+            # Mueve el resultado fuera del workdir para poder limpiarlo entero.
+            final = Path(tempfile.mkdtemp(prefix="iceberg_out_")) / "iceberg.mp4"
+            shutil.move(mp4, final)
+            return str(final)
+        finally:
+            shutil.rmtree(workdir, ignore_errors=True)

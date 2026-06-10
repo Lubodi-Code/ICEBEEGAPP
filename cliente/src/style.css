@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+html {
+  scrollbar-color: rgba(100, 150, 220, 0.4) transparent;
+}
+
+body {
+  margin: 0;
+  background-color: #020617; /* slate-950 */
+  color: #f1f5f9;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+/* Animaciones del modal y el panel lateral */
+@keyframes fade-zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.anim-modal {
+  animation: fade-zoom-in 0.2s ease-out;
+}
+
+.anim-panel {
+  animation: slide-in-right 0.3s ease-out;
+}

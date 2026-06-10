@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 2000" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e3a5f"/>
+      <stop offset="1" stop-color="#2d5b8a"/>
+    </linearGradient>
+    <linearGradient id="sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1b4a73"/>
+      <stop offset="0.35" stop-color="#0d2c4d"/>
+      <stop offset="0.7" stop-color="#061830"/>
+      <stop offset="1" stop-color="#02060f"/>
+    </linearGradient>
+    <linearGradient id="iceTop" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#bfe3f5"/>
+    </linearGradient>
+    <linearGradient id="iceDeep" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#9fd4ee" stop-opacity="0.75"/>
+      <stop offset="0.5" stop-color="#5d9cc8" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#2c5d8a" stop-opacity="0.2"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0.5" cy="0" r="1">
+      <stop offset="0" stop-color="#8ecbe8" stop-opacity="0.35"/>
+      <stop offset="1" stop-color="#8ecbe8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Cielo -->
+  <rect x="0" y="0" width="1600" height="400" fill="url(#sky)"/>
+  <!-- Mar profundo -->
+  <rect x="0" y="400" width="1600" height="1600" fill="url(#sea)"/>
+  <!-- Resplandor bajo la superficie -->
+  <rect x="0" y="400" width="1600" height="700" fill="url(#glow)"/>
+
+  <!-- Parte sumergida del iceberg (la masa grande) -->
+  <path
+    d="M560 405 L1080 405 L1180 560 L1100 720 L1230 900 L1080 1150 L1150 1350 L950 1620 L820 1780 L700 1560 L520 1400 L600 1150 L430 950 L540 760 L460 580 Z"
+    fill="url(#iceDeep)"/>
+
+  <!-- Punta visible del iceberg -->
+  <path
+    d="M560 400 L660 290 L740 320 L820 180 L900 260 L990 220 L1080 400 Z"
+    fill="url(#iceTop)"/>
+
+  <!-- Línea de flotación -->
+  <rect x="0" y="396" width="1600" height="8" fill="#bfe9ff" opacity="0.25"/>
+</svg>
