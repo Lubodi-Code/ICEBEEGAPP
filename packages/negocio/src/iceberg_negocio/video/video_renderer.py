@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import tempfile
+import wave
 from pathlib import Path
 from typing import Any
 
@@ -11,11 +12,40 @@ from iceberg_negocio.video.scene_builder import frame_size, make_background, tex
 
 INTRO_SECONDS = 2.2
 OUTRO_SECONDS = 2.0
+SAMPLE_RATE = 22050
 
 
 class VideoRenderer:
     def __init__(self, settings: Settings | None = None) -> None:
         self._settings = settings or get_settings()
+
+    def _make_silence_audio(self, duration: float, out_path: Path) -> None:
+        """Crea un archivo WAV de silencio con la duración especificada."""
+        n_frames = int(SAMPLE_RATE * duration)
+        with wave.open(str(out_path), "wb") as wav:
+            wav.setnchannels(1)
+            wav.setsampwidth(2)
+            wav.setframerate(SAMPLE_RATE)
+            wav.writeframes(b"\x00\x00" * n_frames)
+
+    def _build_full_audio(self, body_audio: str, out_path: Path) -> str:
+        """Concatena silencio + audio + silencio usando moviepy."""
+        from moviepy import AudioFileClip, concatenate_audioclips
+
+        intro_silence = out_path.parent / "silence_intro.wav"
+        outro_silence = out_path.parent / "silence_outro.wav"
+
+        self._make_silence_audio(INTRO_SECONDS, intro_silence)
+        self._make_silence_audio(OUTRO_SECONDS, outro_silence)
+
+        # Usa moviepy para concatenar (maneja MP3 y WAV automáticamente).
+        with AudioFileClip(str(intro_silence)) as intro_aud:
+            with AudioFileClip(body_audio) as body_aud:
+                with AudioFileClip(str(outro_silence)) as outro_aud:
+                    full = concatenate_audioclips([intro_aud, body_aud, outro_aud])
+                    full.write_audiofile(str(out_path), verbose=False, logger=None)
+
+        return str(out_path)
 
     def render(
         self,
@@ -43,11 +73,16 @@ class VideoRenderer:
         ).with_effects([vfx.FadeIn(0.4), vfx.FadeOut(0.5)])
 
         body = concatenate_videoclips(scenes) if scenes else None
-        if body is not None and audio:
-            body = body.with_audio(AudioFileClip(audio))
 
         parts = [intro] + ([body] if body is not None else []) + [outro]
         final = concatenate_videoclips(parts)
+
+        # Si hay audio, concatena silencio + audio + silencio para cubrir intro/body/outro.
+        if audio:
+            full_audio = out_dir / "full_audio.wav"
+            full_audio_path = self._build_full_audio(audio, full_audio)
+            final = final.with_audio(AudioFileClip(full_audio_path))
+
         final.write_videofile(
             str(out_path),
             fps=self._settings.video_fps,
