@@ -1,3 +1,12 @@
+---
+title: ICEBERGAPP
+emoji: 🧊
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # Iceberg Web — Backend
 
 Plataforma social para crear, compartir y narrar *icebergs* de curiosidades entre amigos.
