@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 import tempfile
 import wave
 from pathlib import Path
@@ -301,7 +302,11 @@ class VideoRenderer:
                 return img, (xc, yc), band_h
             except Exception:
                 # Playwright ausente, frontend caído o timeout: usamos el dibujo.
-                pass
+                logging.getLogger(__name__).warning(
+                    "Screenshot del mapa falló (frontend=%s); usando mapa dibujado",
+                    self._settings.frontend_base_url,
+                    exc_info=True,
+                )
 
         return self._draw_levels_map(
             size, MAP_SUPERSAMPLE, iceberg_title, entry_title, levels, target_number
