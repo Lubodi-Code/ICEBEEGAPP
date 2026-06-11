@@ -49,6 +49,17 @@ export const api = {
     form.append("file", file);
     return request(`/entries/${entryId}/media`, { method: "POST", body: form });
   },
+
+  subirMusica: (levelId, file) => {
+    const form = new FormData();
+    form.append("file", file);
+    return request(`/levels/${levelId}/music`, { method: "POST", body: form });
+  },
+
+  crearTokenEdicion: (icebergId) =>
+    request(`/icebergs/${icebergId}/edit-token`, { method: "POST" }),
+  validarTokenEdicion: (icebergId, token) =>
+    request(`/icebergs/${icebergId}/edit-token/validate?token=${encodeURIComponent(token)}`),
 };
 
 // POST /video devuelve el .mp4 como blob (descarga efímera).
@@ -72,4 +83,10 @@ export async function generarVideo(payload) {
 
 export function enlacePublico(slug) {
   return `${API_URL}/i/${slug}`;
+}
+
+// Enlace al editor de esta SPA (con token de edición opcional).
+export function enlaceEditor(slug, token) {
+  const base = `${window.location.origin}${window.location.pathname}#/e/${encodeURIComponent(slug)}`;
+  return token ? `${base}?t=${encodeURIComponent(token)}` : base;
 }

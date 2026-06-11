@@ -1,3 +1,12 @@
+---
+title: ICEBERGAPP
+emoji: 🧊
+colorFrom: blue
+colorTo: green
+sdk: docker
+pinned: false
+---
+
 # Iceberg Web — Backend
 
 Plataforma social para crear, compartir y narrar *icebergs* de curiosidades entre amigos.
@@ -98,7 +107,8 @@ Copia `.env.example` a `.env` y ajusta lo que necesites:
 | `PUBLIC_BASE_URL` | `http://localhost:8000` | Base de slugs compartibles, OG tags y media local. |
 | `R2_ACCOUNT_ID` / `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` / `R2_BUCKET` / `R2_PUBLIC_URL` | vacío | Cloudflare R2. Si están vacías, usa el fallback local. |
 | `MAX_VIDEO_MB` | `25` | Tamaño máximo para videos subidos. |
-| `TTS_ENGINE` | `espeak` | Motor de voz: `espeak` (robótico clásico), `piper` (neuronal, requiere `PIPER_VOICE`) o `silent` (sin TTS instalado; dev/tests). |
+| `TTS_ENGINE` | `edge` | Motor de voz: `edge` (neuronal Microsoft, gratis y sin API key — lo más cercano a Loquendo; requiere internet), `espeak` (robótico clásico), `piper` (neuronal local, requiere `PIPER_VOICE`) o `silent` (sin TTS; dev/tests offline). |
+| `EDGE_VOICE` / `EDGE_RATE` | `es-ES-AlvaroNeural` / `+0%` | Voz y velocidad de edge-tts (también `es-MX-JorgeNeural`, etc.). |
 | `ESPEAK_VOICE` / `ESPEAK_SPEED` | `es` / `165` | Voz y velocidad de eSpeak-NG. |
 | `PIPER_VOICE` | vacío | Ruta al modelo `.onnx` de Piper (solo con `TTS_ENGINE=piper`). |
 | `VIDEO_ASPECT` / `VIDEO_FPS` | `9:16` / `24` | Aspecto (vertical u horizontal `16:9`) y fps del video exportado. |
@@ -163,11 +173,13 @@ docker run -p 7860:7860 --env-file .env iceberg-api
 - [x] **Fase 1 — MVP:** CRUD de iceberg/level/entry + vista pública.
 - [x] **Fase 2 — Compartir:** enlace público con OG tags (el gancho).
 - [x] **Fase 3 — Multimedia:** subida con compresión WebP (Pillow) → R2 / fallback local.
-- [x] **Fase 4 — Video:** pipeline TTS (eSpeak-NG / Piper / silent) + moviepy/FFmpeg en
-      `packages/negocio/src/iceberg_negocio/video/`; `POST /video` devuelve el `.mp4`
-      (escenas Ken Burns, overlays de título/nivel/subtítulos, intro/outro, 9:16 o 16:9).
-- [x] **Fase 5 — Frontend:** SPA Vue 3 + Vite en `cliente/` (crear/editar iceberg, niveles
-      colapsables, subir media, copiar enlace y generar video).
+- [x] **Fase 4 — Video:** pipeline TTS (edge-tts / eSpeak-NG / Piper / silent) +
+      moviepy/FFmpeg en `packages/negocio/src/iceberg_negocio/video/`; `POST /video`
+      devuelve el `.mp4` (la voz narra la descripción — máx. 500 caracteres —, escenas
+      Ken Burns con fundidos, overlays de título/nivel/subtítulos, intro/outro, 9:16 o 16:9).
+- [x] **Fase 5 — Frontend:** SPA Vue 3 + Vite + Tailwind en `cliente/` (capas de
+      profundidad estilo iceberg, modal de entrada, panel lateral de edición, subir media,
+      compartir enlace y generar video narrado).
 - [ ] **Pulido futuro:** cuentas, plantillas, música de fondo, etiquetas por nivel.
 
 > Restricción de diseño: **costo de operación cero** (todo dentro de planes gratuitos:

@@ -55,6 +55,18 @@ class MediaService:
         media = self.repo.create(Media(entry_id=entry_id, url=url, tipo=tipo, orden=orden))
         return MediaRead.model_validate(media)
 
+    def upload_audio(self, level_id: str, filename: str, content_type: str, raw: bytes) -> str:
+        """Sube un archivo de audio (música de nivel) y devuelve su URL pública."""
+        content_type = (content_type or "").lower()
+        if not content_type.startswith("audio/"):
+            raise ValidationError(f"Se esperaba un archivo de audio, llegó: {content_type!r}")
+        max_bytes = get_settings().max_audio_mb * 1024 * 1024
+        if len(raw) > max_bytes:
+            raise ValidationError(f"El audio supera el máximo de {get_settings().max_audio_mb} MB")
+        ext = Path(filename).suffix or ".mp3"
+        key = f"music/{level_id}/{uuid4().hex}{ext}"
+        return self.storage.put(key, raw, content_type)
+
     def compress_webp(self, raw: bytes) -> bytes:
         """Convierte a RGB, limita el lado mayor a 1080px, calidad 80, sin EXIF."""
         with Image.open(BytesIO(raw)) as img:

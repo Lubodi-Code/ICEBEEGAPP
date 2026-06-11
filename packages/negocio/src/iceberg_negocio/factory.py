@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from sqlmodel import Session
 
+from iceberg_negocio.edit_token_service import EditTokenService
 from iceberg_negocio.entry_service import EntryService
 from iceberg_negocio.iceberg_service import IcebergService
 from iceberg_negocio.level_service import LevelService
@@ -19,6 +20,7 @@ from iceberg_negocio.video import (
     VideoService,
 )
 from iceberg_repositorio import (
+    EditTokenRepository,
     EntryRepository,
     IcebergRepository,
     LevelRepository,
@@ -40,6 +42,10 @@ def get_entry_service(session: Session) -> EntryService:
 
 def get_media_service(session: Session) -> MediaService:
     return MediaService(MediaRepository(session), R2Storage())
+
+
+def get_edit_token_service(session: Session) -> EditTokenService:
+    return EditTokenService(EditTokenRepository(session))
 
 
 def get_share_service() -> ShareService:

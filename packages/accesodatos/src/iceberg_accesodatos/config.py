@@ -22,6 +22,11 @@ class Settings(BaseSettings):
     # URL pública base (slugs compartibles, OG tags, fallback de media local).
     public_base_url: str = "http://localhost:8000"
 
+    # URL base del frontend (SPA). La usa la intro del video para sacar una
+    # screenshot real del editor (modo mapa) con Playwright; si no está
+    # disponible, el render cae al mapa dibujado con Pillow.
+    frontend_base_url: str = "http://localhost:5173"
+
     # Cloudflare R2 (S3-compatible). Vacío => storage usa fallback local.
     r2_account_id: str = ""
     r2_access_key_id: str = ""
@@ -32,8 +37,16 @@ class Settings(BaseSettings):
     # Límite de tamaño para videos subidos (MB).
     max_video_mb: int = 25
 
-    # Pipeline de video: motor TTS ("espeak" | "piper" | "silent").
-    tts_engine: str = "espeak"
+    # Límite de tamaño para música subida a un nivel (MB).
+    max_audio_mb: int = 15
+
+    # Vigencia (días) de los tokens de edición compartibles.
+    edit_token_expiry_days: int = 30
+
+    # Pipeline de video: motor TTS ("edge" | "espeak" | "piper" | "silent").
+    tts_engine: str = "edge"
+    edge_voice: str = "es-ES-AlvaroNeural"  # voz neuronal tipo Loquendo moderno
+    edge_rate: str = "+0%"  # velocidad, ej. "+10%" / "-5%"
     espeak_voice: str = "es"
     espeak_speed: int = 165
     piper_voice: str = ""  # ruta al modelo de voz .onnx de Piper

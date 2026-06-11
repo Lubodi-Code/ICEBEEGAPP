@@ -48,7 +48,20 @@ def create_db_and_tables() -> None:
     Asume que los modelos de ``iceberg_entities`` ya fueron importados (lo hace
     la cadena api -> negocio -> repositorio -> entities al arrancar la app).
     """
-    SQLModel.metadata.create_all(get_engine())
+    engine = get_engine()
+    SQLModel.metadata.create_all(engine)
+    _apply_light_migrations(engine)
+
+
+def _apply_light_migrations(engine: Engine) -> None:
+    """Migraciones aditivas mínimas (sin Alembic): agrega columnas nuevas si faltan."""
+    from sqlalchemy import inspect, text
+
+    inspector = inspect(engine)
+    columns = {c["name"] for c in inspector.get_columns("levels")}
+    if "music_url" not in columns:
+        with engine.begin() as conn:
+            conn.execute(text("ALTER TABLE levels ADD COLUMN music_url VARCHAR"))
 
 
 def get_session() -> Generator[Session, None, None]:

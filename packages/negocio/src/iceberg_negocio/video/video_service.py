@@ -38,24 +38,43 @@ class VideoService:
         """
         workdir = Path(tempfile.mkdtemp(prefix="iceberg_video_"))
         try:
-            text = self.narration.build(req)
-            audio = self.tts.synth(text, workdir=str(workdir))
+            # Cuerpo: la voz narra la entrada y su descripción.
+            body_text = self.narration.build(req)
+            body_audio = self.tts.synth(body_text, workdir=str(workdir / "body"))
+            # Intro: la voz presenta el iceberg y el nivel durante el zoom.
+            intro_text = self.narration.build_intro(req)
+            intro_audio = self.tts.synth(intro_text, workdir=str(workdir / "intro"))
             assets = self.fetcher.fetch(req.media, workdir=str(workdir))
 
             level_label = f"Nivel {req.level_number}"
             if req.level_name:
                 level_label += f" · {req.level_name}"
+            # Subtítulos: solo la descripción (el título va en el header de la
+            # escena y el nivel en la intro; así no se repite información).
             scenes = self.scenes.build_scenes(
                 assets,
-                text,
-                audio,
+                req.description,
+                body_audio,
                 title=req.entry_title,
-                level_label=level_label,
+            )
+            music = (
+                self.fetcher.fetch_audio(req.music_url, workdir=str(workdir))
+                if req.music_url
+                else None
             )
             mp4 = self.renderer.render(
                 scenes,
-                audio=audio,
+                audio=body_audio,
+                intro_audio=intro_audio,
                 title=req.iceberg_title,
+                entry_title=req.entry_title,
+                level_label=level_label,
+                levels=[(lv.numero, lv.nombre) for lv in req.levels],
+                level_number=req.level_number,
+                slug=req.slug,
+                entry_id=req.entry_id,
+                music=music,
+                show_url=req.show_url,
                 workdir=str(workdir),
             )
 

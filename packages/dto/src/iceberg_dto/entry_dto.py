@@ -6,16 +6,19 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from iceberg_dto.media_dto import MediaRead
 
+# Límite de la descripción narrable (lo que el TTS lee en el video).
+DESCRIPCION_MAX = 500
+
 
 class EntryCreate(BaseModel):
     titulo: str = Field(min_length=1, max_length=160)
-    descripcion: str = ""
+    descripcion: str = Field(default="", max_length=DESCRIPCION_MAX)
     orden: int = 0
 
 
 class EntryUpdate(BaseModel):
     titulo: str | None = Field(default=None, min_length=1, max_length=160)
-    descripcion: str | None = None
+    descripcion: str | None = Field(default=None, max_length=DESCRIPCION_MAX)
     orden: int | None = None
 
 

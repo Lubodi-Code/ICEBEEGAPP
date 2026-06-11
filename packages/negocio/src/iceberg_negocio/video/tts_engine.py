@@ -1,12 +1,14 @@
-"""TTSEngine — convierte el guion en audio WAV.
+"""TTSEngine — convierte el guion en audio.
 
 Motores soportados (variable ``TTS_ENGINE``):
 
+- ``edge``: voces neuronales de Microsoft Edge vía ``edge-tts`` (gratis, sin API key;
+  ``es-ES-AlvaroNeural`` es lo más cercano al Loquendo moderno). Requiere internet.
 - ``espeak``: eSpeak-NG vía subprocess (el sonido robótico clásico tipo loquendo).
-- ``piper``: voz neuronal; requiere el binario ``piper`` y un modelo ``.onnx``
+- ``piper``: voz neuronal local; requiere el binario ``piper`` y un modelo ``.onnx``
   (``PIPER_VOICE``).
 - ``silent``: genera un WAV de silencio proporcional al texto. Útil para dev/tests
-  en máquinas sin TTS instalado.
+  en máquinas sin TTS instalado / sin internet.
 """
 
 from __future__ import annotations
@@ -33,10 +35,14 @@ class TTSEngine:
         """Sintetiza ``text`` a un WAV y devuelve su ruta local."""
         out_dir = Path(workdir) if workdir else Path(tempfile.mkdtemp(prefix="iceberg_tts_"))
         out_dir.mkdir(parents=True, exist_ok=True)
-        out_path = out_dir / "narracion.wav"
 
         engine = self._settings.tts_engine.lower().strip()
-        if engine == "espeak":
+        # edge-tts entrega MP3; el resto, WAV. moviepy/FFmpeg leen ambos.
+        out_path = out_dir / ("narracion.mp3" if engine == "edge" else "narracion.wav")
+
+        if engine == "edge":
+            self._synth_edge(text, out_path)
+        elif engine == "espeak":
             self._synth_espeak(text, out_path)
         elif engine == "piper":
             self._synth_piper(text, out_path)
@@ -45,6 +51,32 @@ class TTSEngine:
         else:
             raise VideoUnavailableError(f"Motor TTS desconocido: {engine!r}")
         return str(out_path)
+
+    def _synth_edge(self, text: str, out_path: Path) -> None:
+        """Voz neuronal de Microsoft Edge (es-ES-AlvaroNeural ≈ Loquendo moderno)."""
+        import asyncio
+
+        try:
+            import edge_tts
+        except ImportError as exc:
+            raise VideoUnavailableError("edge-tts no está instalado (uv add edge-tts)") from exc
+
+        async def _run() -> None:
+            com = edge_tts.Communicate(
+                text, self._settings.edge_voice, rate=self._settings.edge_rate
+            )
+            await com.save(str(out_path))
+
+        try:
+            asyncio.run(_run())
+        except VideoUnavailableError:
+            raise
+        except Exception as exc:
+            raise VideoUnavailableError(
+                f"edge-tts falló (¿hay conexión a internet?): {exc}"
+            ) from exc
+        if not out_path.exists() or out_path.stat().st_size == 0:
+            raise VideoUnavailableError("edge-tts no produjo audio")
 
     def _synth_espeak(self, text: str, out_path: Path) -> None:
         binary = shutil.which("espeak-ng") or shutil.which("espeak")
