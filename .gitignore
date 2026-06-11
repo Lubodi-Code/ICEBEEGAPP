@@ -19,3 +19,12 @@ media_local/
 
 # Lock generado por uv (opcional versionarlo; aquí lo ignoramos en el scaffold)
 # uv.lock
+
+# Vercel
+.vercel
+
+# Artefactos temporales / de prueba (no versionar)
+*_tmp.*
+*.tmp
+shot_*.png
+*.mp4
